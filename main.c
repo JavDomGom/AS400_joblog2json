@@ -6,11 +6,19 @@
 #include <string.h>
 
 #define MAXSTRLEN 10
-#define MAXWORD 9
+#define MAXWORD 5
 
 bool prefix();
+void processLogHeader();
+void processPageHeader();
 
-int main(int argc, char * argv[])
+typedef struct {
+	char *user;
+	char *jobName;
+	char *dateTime;
+} JobLog;
+
+int main(int argc, char *argv[])
 {
 	if (argc < 2) return 1;
 
@@ -18,13 +26,11 @@ int main(int argc, char * argv[])
 	char * iniPrefix = "INICIO";
 	char * endPrefix = "FIN";
 	char * line = NULL;
-	char * IBMiOSProgram_Name;
-	char * IBMiOSProgram_Version;
-	int IBMiOSProgram_Size;
 	int n_line = 0;
 	size_t len = 0;
 	ssize_t read;
 	FILE * fp;
+	JobLog jl;
 
 	fp = fopen(filename, "r");
 	if (fp == NULL)
@@ -33,33 +39,20 @@ int main(int argc, char * argv[])
 	while ((read = getline(&line, &len, fp)) != -1)
 	{
 		printf("[%d] %s", n_line, line);
-
+		
+		// If line starts with iniPrefix.
 		if (prefix(line, iniPrefix, strlen(iniPrefix)))
 		{
-			char arr[MAXWORD][MAXSTRLEN + 1] = {0};
-			char *pch;
-			int i = 0;
-			pch = strtok (line," ");
+			processLogHeader(line, &jl);
+			printf("user: %s\n", jl.user);
+			printf("jobName: %s\n", jl.jobName);
+			printf("dateTime: %s\n", jl.dateTime);
+		}
 
-			while (pch != NULL && i < MAXWORD)
-			{
-				strncpy(arr[i++], pch, MAXSTRLEN);
-				pch = strtok (NULL, " ");
-			}
-			
-			char * user = arr[4];
-			char * jobName = arr[5];
-			char * date = arr[6];
-			char * time = arr[7];
-			char * timeZone = arr[8];
-			size_t dateLen = strlen(date);
-			size_t timeLen = strlen(time);
-			size_t timeZoneLen = strlen(timeZone);
-
-			// 3 additional bytes for spaces and EOL.
-			char logDateTime[dateLen + timeLen + timeZoneLen + 3];
-			
-			snprintf(logDateTime, sizeof logDateTime, "%s %s %s", date, time, timeZone);
+		// If second line.
+		if (n_line == 1)
+		{
+			processPageHeader(line, &jl);
 		}
 
 		if (prefix(line, endPrefix, strlen(endPrefix))) {
@@ -78,4 +71,61 @@ int main(int argc, char * argv[])
 bool prefix(const char *pre, const char *str, size_t n)
 {
 	return strncmp(pre, str, n) == 0;
+}
+
+void processLogHeader(char * line, JobLog *jl)
+{
+	char arr[MAXWORD][MAXSTRLEN + 1] = {0};
+	char *pch;
+	int i = 0;
+	int k = 0;
+	pch = strtok(line, " ");
+
+	while (pch != NULL && k < MAXWORD)
+	{
+		if(i >= 4) strncpy(arr[k++], pch, MAXSTRLEN);
+		pch = strtok(NULL, " ");
+		i++;
+	}
+
+	jl->user = arr[0];
+	jl->jobName = arr[1];
+	
+	char *date = arr[2];
+	char *time = arr[3];
+	char *timeZone = arr[4];
+
+	size_t dateLen = strlen(date);
+	size_t timeLen = strlen(time);
+	size_t timeZoneLen = strlen(timeZone);
+
+	// 3 additional bytes for spaces and EOL.
+	char logDateTime[dateLen + timeLen + timeZoneLen + 3];
+	snprintf(logDateTime, sizeof logDateTime, "%s %s %s", date, time, timeZone);
+	strcpy(jl->dateTime, logDateTime);
+}
+
+void processPageHeader(char * line, JobLog *jl)
+{
+	char arr[3][7 + 1] = {0};
+	char *pch;
+	int i = 0;
+	pch = strtok(line, " ");
+
+	while (pch != NULL && i < 3)
+	{
+		strncpy(arr[i++], pch, 7);
+		pch = strtok(NULL, " ");
+	}
+
+	char *IBMiOSProgramName = arr[0];
+	char *IBMiOSProgramVersion = arr[1];
+	char *IBMiOSProgramSize = arr[2];
+
+	printf("IBMiOSProgramName: %s\n", IBMiOSProgramName);
+	printf("IBMiOSProgramVersion: %s\n", IBMiOSProgramVersion);
+	printf("IBMiOSProgramSize: %s\n", IBMiOSProgramSize);
+
+	printf("Press ENTER key to continue ...\n");
+	getchar();
 }
