@@ -1,5 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g
+PROGRAM_NAME=main
+DEPS=joblogreader.c joblogreader.h
 
-main: main.c
-	gcc $(CFLAGS) -o main main.c
+main: $(PROGRAM_NAME).c $(DEPS)
+	gcc $(CFLAGS) -o $(PROGRAM_NAME) $(PROGRAM_NAME).c $(DEPS)
