@@ -9,8 +9,7 @@ void processLogHeader(char *line, jobLog *jl)
 {
 	char arr[LOG_HEADER_MAXWORDS][LOG_HEADER_MAXSTRLEN + 1] = {0};
 	char *pch;
-	int i = 0;
-	int k = 0;
+	int i = 0, k = 0;
 	pch = strtok(line, " ");
 
 	while (pch != NULL && k < LOG_HEADER_MAXWORDS)
@@ -28,7 +27,7 @@ void processLogHeader(char *line, jobLog *jl)
 	snprintf(logDateTime, sizeof logDateTime, "%s %s %s", date, time, timeZone);
 
 	strcpy(jl->user, arr[0]);
-	strcpy(jl->jobName, arr[1]);
+	strcpy(jl->jobLogName, arr[1]);
 	strcpy(jl->dateTime, logDateTime);
 }
 
@@ -50,12 +49,32 @@ void processPageHeader(char *line, jobLog *jl)
 	strcpy(jl->IBMiOSProgramSize, arr[2]);
 }
 
+void processJobAttributes(char *line, jobLog *jl)
+{
+	char arr[JOB_ATTR_MAXWORDS][JOB_ATTR_MAXSTRLEN] = {0};
+	char *pch;
+	int i = 0, k = 0;
+	pch = strtok(line, " .:");
+
+	while (pch != NULL && k < JOB_ATTR_MAXWORDS)
+	{
+		if(i == 3 || i == 7) strncpy(arr[k++], pch, JOB_ATTR_MAXSTRLEN);
+		pch = strtok(NULL, " .:");
+		i++;
+	}
+	
+	strcpy(jl->jobName, arr[0]);
+	strcpy(jl->jobNumber, arr[1]);
+}
+
 void printStruct(jobLog *jl)
 {
     printf("jl->user = %s\n", jl->user);
-    printf("jl->jobName = %s\n", jl->jobName);
+    printf("jl->jobLogName = %s\n", jl->jobLogName);
     printf("jl->dateTime = %s\n", jl->dateTime);
     printf("jl->IBMiOSProgramName = %s\n", jl->IBMiOSProgramName);
     printf("jl->IBMiOSProgramVersion = %s\n", jl->IBMiOSProgramVersion);
     printf("jl->IBMiOSProgramSize = %s\n", jl->IBMiOSProgramSize);
+    printf("jl->jobName = %s\n", jl->jobName);
+    printf("jl->jobNumber = %s\n", jl->jobNumber);
 }

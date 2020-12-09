@@ -13,22 +13,27 @@
 #define PAGE_HEADER_MAXSTRLEN 8
 #define PAGE_HEADER_MAXWORDS 3
 #define DATETIME_MAXSTRLEN 29
+#define JOB_ATTR_MAXWORDS 2
+#define JOB_ATTR_MAXSTRLEN 10
 
 typedef struct
 {
 	char user[LOG_HEADER_MAXSTRLEN];
-	char jobName[LOG_HEADER_MAXSTRLEN];
+	char jobLogName[LOG_HEADER_MAXSTRLEN];
 	char dateTime[DATETIME_MAXSTRLEN];
 	char IBMiOSProgramName[PAGE_HEADER_MAXSTRLEN];
 	char IBMiOSProgramVersion[PAGE_HEADER_MAXSTRLEN];
 	char IBMiOSProgramSize[PAGE_HEADER_MAXSTRLEN];
+	char jobName[JOB_ATTR_MAXSTRLEN];
+	char jobNumber[JOB_ATTR_MAXSTRLEN];
 } jobLog;
 
 bool prefix(const char *pre, const char *str, size_t n);
 void processLogHeader(char *line, jobLog *jl);
 void processPageHeader(char *line, jobLog *jl);
+void processJobAttributes(char *line, jobLog *jl);
 void printStruct(jobLog *jl);
 
-#define INIT_JOBLOG(X) jobLog X = {.user = "", .jobName = "", .dateTime = "", .IBMiOSProgramName = "", .IBMiOSProgramVersion = "", .IBMiOSProgramSize = ""}
+#define INIT_JOBLOG(X) jobLog X = {.user = "", .jobLogName = "", .dateTime = "", .IBMiOSProgramName = "", .IBMiOSProgramVersion = "", .IBMiOSProgramSize = "", .jobName = "", .jobNumber = ""}
 
 #endif

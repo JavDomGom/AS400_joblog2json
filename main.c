@@ -31,6 +31,9 @@ int main(int argc, char *argv[])
 		// If second line.
 		if (n_line == 1) processPageHeader(line, &jl);
 
+		// If third or fourth lines.
+		if (n_line == 2) processJobAttributes(line, &jl);
+
 		printStruct(&jl);
 
 		printf("Press ENTER key to continue ...\n");
