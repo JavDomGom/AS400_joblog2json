@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 		if (n_line == 1) processPageHeader(line, &jl);
 
 		// If third or fourth lines.
-		if (n_line == 2) processJobAttributes(line, &jl);
+		if (n_line == 2 || n_line == 3) processJobAttributes(line, &jl, n_line);
 
 		printStruct(&jl);
 
