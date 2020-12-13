@@ -5,10 +5,37 @@ bool prefix(const char *pre, const char *str, size_t n)
 	return strncmp(pre, str, n) == 0;
 }
 
+char *rtrim(const char *s)
+{
+	while( isspace(*s) || !isprint(*s) ) ++s;
+	return strdup(s);
+}
+
+char *ltrim(const char *s)
+{
+	char *r = strdup(s);
+	if (r != NULL)
+	{
+		char *fr = r + strlen(s) - 1;
+		while( (isspace(*fr) || !isprint(*fr) || *fr == 0) && fr >= r) --fr;
+		*++fr = 0;
+	}
+	return r;
+}
+
+char *trim(const char *s)
+{
+	char *r = rtrim(s);
+	char *f = ltrim(r);
+	free(r);
+	return f;
+}
+
 void processLogHeader(char *line, jobLog *jl)
 {
 	char arr[LOG_HEADER_MAXWORDS][LOG_HEADER_MAXSTRLEN + 1] = {0};
-	char *pch;
+	char logDateTime[LOG_HEADER_DATETIME_MAXSTRLEN];
+	char *pch, *date, *time, *timeZone;
 	int i = 0, k = 0;
 	pch = strtok(line, " ");
 
@@ -19,11 +46,10 @@ void processLogHeader(char *line, jobLog *jl)
 		i++;
 	}
 	
-	char *date = arr[2];
-	char *time = arr[3];
-	char *timeZone = arr[4];
+	date = arr[2];
+	time = arr[3];
+	timeZone = arr[4];
 
-	char logDateTime[DATETIME_MAXSTRLEN];
 	snprintf(logDateTime, sizeof logDateTime, "%s %s %s", date, time, timeZone);
 
 	strcpy(jl->user, arr[0]);
@@ -87,16 +113,72 @@ void processJobAttributes(char *line, jobLog *jl, int n_line)
 	}
 }
 
-void printStruct(jobLog *jl)
+void processMsgHeader(char *line, jobLog *jl)
 {
-    printf("jl->user = %s\n", jl->user);
-    printf("jl->jobLogName = %s\n", jl->jobLogName);
-    printf("jl->dateTime = %s\n", jl->dateTime);
-    printf("jl->IBMiOSProgramName = %s\n", jl->IBMiOSProgramName);
-    printf("jl->IBMiOSProgramVersion = %s\n", jl->IBMiOSProgramVersion);
-    printf("jl->IBMiOSProgramSize = %s\n", jl->IBMiOSProgramSize);
-    printf("jl->jobName = %s\n", jl->jobName);
-    printf("jl->jobNumber = %s\n", jl->jobNumber);
-	printf("jl->jobDescription = %s\n", jl->jobDescription);
-    printf("jl->jobLibrary = %s\n", jl->jobLibrary);
+	char arr[MSG_HEADER_MAXWORDS][MSG_HEADER_MAXSTRLEN + 1] = {0};
+	char msgDateTime[MSG_HEADER_DATETIME_MAXSTRLEN];
+	char *pch, *word, *date, *time;
+	int k = 0;
+	bool isMsgIDNone, isMsgToPGMExt;
+	pch = strtok(line, " ");
+
+	while (pch != NULL && k < MSG_HEADER_MAXWORDS)
+	{
+		isMsgIDNone = !strcmp(arr[0], "*NONE");
+		isMsgToPGMExt = !strcmp(arr[8], "*EXT");
+
+		// When msgID is "*NONE" msgSEV field is empty.
+		// When msgToPGM is "*EXT" msgToPGMLibrary field is empty.
+		// In both cases it's replaced by the string "n/a".
+		if ((isMsgIDNone && k == 2) || (isMsgToPGMExt && k == 9))
+		{
+			word = "n/a";
+		} else {
+			word = pch;
+			pch = strtok(NULL, " ");
+		}
+
+		strncpy(arr[k++], word, MSG_HEADER_MAXSTRLEN);
+	}
+	
+	date = arr[3];
+	time = arr[4];
+
+	snprintf(msgDateTime, sizeof msgDateTime, "%s %s", date, time);
+
+	strcpy(jl->msgID, arr[0]);
+	strcpy(jl->msgType, arr[1]);
+	strcpy(jl->msgSEV, arr[2]);
+	strcpy(jl->msgDatetime, msgDateTime);
+	strcpy(jl->msgFromPGM, arr[5]);
+	strcpy(jl->msgFromPGMLibrary, arr[6]);
+	strcpy(jl->msgFromPGMInst, arr[7]);
+	strcpy(jl->msgToPGM, arr[8]);
+	strcpy(jl->msgToPGMLibrary, arr[9]);
+	strcpy(jl->msgToPGMInst, arr[10]);
+}
+
+void printStructToJSON(jobLog *jl)
+{
+    printf("{\"user\": \"%s\", ", jl->user);
+    printf("\"jobLogName\": \"%s\", ", jl->jobLogName);
+    printf("\"dateTime\": \"%s\", ", jl->dateTime);
+    printf("\"IBMiOSProgramName\": \"%s\", ", jl->IBMiOSProgramName);
+    printf("\"IBMiOSProgramVersion\": \"%s\", ", jl->IBMiOSProgramVersion);
+    printf("\"IBMiOSProgramSize\": \"%s\", ", jl->IBMiOSProgramSize);
+    printf("\"jobName\": \"%s\", ", jl->jobName);
+    printf("\"jobNumber\": \"%s\", ", jl->jobNumber);
+	printf("\"jobDescription\": \"%s\", ", jl->jobDescription);
+    printf("\"jobLibrary\": \"%s\", ", jl->jobLibrary);
+	printf("\"msgID\": \"%s\", ", jl->msgID);
+	printf("\"msgType\": \"%s\", ", jl->msgType);
+	printf("\"msgSEV\": \"%s\", ", jl->msgSEV);
+	printf("\"msgDatetime\": \"%s\", ", jl->msgDatetime);
+	printf("\"msgFromPGM\": \"%s\", ", jl->msgFromPGM);
+	printf("\"msgFromPGMLibrary\": \"%s\", ", jl->msgFromPGMLibrary);
+	printf("\"msgFromPGMInst\": \"%s\", ", jl->msgFromPGMInst);
+	printf("\"msgToPGM\": \"%s\", ", jl->msgToPGM);
+	printf("\"msgToPGMLibrary\": \"%s\", ", jl->msgToPGMLibrary);
+	printf("\"msgToPGMInst\": \"%s\", ", jl->msgToPGMInst);
+	printf("\"msg\": \"%s\"}\n", jl->msg);
 }
