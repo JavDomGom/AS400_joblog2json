@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 		// If line starts with PREFIX_LOG_INI.
 		if (prefix(line, PREFIX_LOG_INI, strlen(PREFIX_LOG_INI))) processLogHeader(line, &jl);
 
-		// If line starts with PREFIX_LOG_END.
+		// If line starts with PREFIX_LOG_END don't process and continue.
 		if (prefix(line, PREFIX_LOG_END, strlen(PREFIX_LOG_END))) continue;
 
 		// If 2th line.
@@ -34,11 +34,15 @@ int main(int argc, char *argv[])
 		// If 3th or 4th lines.
 		if (n_line == 2 || n_line == 3) processJobAttributes(line, &jl, n_line);
 
+			// If line starts with PREFIX_MSG_HEADER don't process and continue..
+		if (prefix(line, PREFIX_MSG_HEADER, strlen(PREFIX_MSG_HEADER))) continue;
+
 		// If n_line is greater than 4.
 		if (n_line > 4)
 		{
 			// If line doesn't starts with space is the message header.
-			if (!prefix(line, " ", 1))
+			// if (!prefix(line, " ", 1))
+			if (line[0] != 32)
 			{
 				// Print last message if exist.
 				if (n_msgs > 0) printStructToJSON(&jl);
@@ -50,7 +54,7 @@ int main(int argc, char *argv[])
 				n_msgs++;
 				// printf("[%d] Press ENTER key to continue ...\n", n_msgs);
 				// getchar();
-			} else {
+			} else if(line[2] == 32) {
 				msgFragment = trim(line);
 				strcat(strcat(jl.msg, " "), msgFragment);
 			}
