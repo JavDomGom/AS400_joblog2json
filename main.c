@@ -2,6 +2,7 @@
 #include <string.h>
 #include "joblogreader.h"
 
+
 int main(int argc, char *argv[])
 {
 	if (argc < 2) return 1;
@@ -26,7 +27,11 @@ int main(int argc, char *argv[])
 		if (prefix(line, PREFIX_LOG_INI, strlen(PREFIX_LOG_INI))) processLogHeader(line, &jl);
 
 		// If line starts with PREFIX_LOG_END don't process and continue.
-		if (prefix(line, PREFIX_LOG_END, strlen(PREFIX_LOG_END))) continue;
+		if (prefix(line, PREFIX_LOG_END, strlen(PREFIX_LOG_END)))
+		{
+			n_line = 0;
+			continue;
+		}
 
 		// If 2th line.
 		if (n_line == 1) processPageHeader(line, &jl);
@@ -60,14 +65,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		// If line ends with PREFIX_LOG_END.
-		if (prefix(line, PREFIX_LOG_END, strlen(PREFIX_LOG_END))) {
-			// printf("Press ENTER key to continue ...\n");
-			// getchar();
-			n_line = 0;
-		} else {
-			n_line++;
-		}
+		n_line++;
 	}
 
 	free(line);
